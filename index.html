@@ -409,3 +409,2058 @@ function downloadUpdatedGame(){
 </script>
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Room 2</title>
+<style>
+  :root{
+    --navy:#1f5c3e;
+    --border:#4c8868;
+    --white:#ffffff;
+    --gold:#d8a24a;
+    --cream:#f4f1ea;
+    --font: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:var(--font);
+    background:var(--navy);
+    min-height:100%;
+    display:flex; align-items:center; justify-content:center;
+    padding:18px;
+  }
+  .wrap{ width:100%; max-width:360px; display:flex; flex-direction:column; gap:14px; }
+
+  .card{
+    background:var(--navy);
+    border:1px solid var(--border);
+    border-radius:2px;
+    padding:22px 16px 26px;
+    display:flex; flex-direction:column; gap:20px;
+    box-shadow:0 10px 30px rgba(20,26,70,0.25);
+  }
+
+  .eyebrow{
+    color:rgba(255,255,255,0.6);
+    font-size:clamp(10px, 2.3vw, 13px); font-weight:700; letter-spacing:.14em;
+    text-transform:uppercase; text-align:center;
+  }
+
+  .box-surface{
+    background:var(--cream);
+    border-radius:8px;
+    padding:22px 14px;
+    display:flex; gap:14px; justify-content:center;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.12);
+  }
+
+  .pad{
+    flex:1; max-width:135px;
+    aspect-ratio: 1 / 1;
+    background:#fbfaf6;
+    border-radius:14px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    position:relative;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.10), inset 0 0 0 1px rgba(0,0,0,0.04);
+    user-select:none;
+    transition: box-shadow .3s ease;
+  }
+  .pad-glow{
+    position:absolute; inset:6%;
+    border-radius:12px;
+    opacity:0;
+    transition: opacity .35s ease, background .35s ease;
+    pointer-events:none;
+  }
+  .pad.active .pad-glow{ opacity:1; }
+
+  .pad-circle{
+    position:relative;
+    width:74%; height:74%;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    text-align:center;
+    border:2px solid var(--navy);
+    background:transparent;
+    transition: background .35s ease, border-color .35s ease, box-shadow .35s ease;
+  }
+  .pad-circle .idle-text{
+    color:var(--navy);
+    font-size:clamp(10px, 2.4vw, 13px); font-weight:700; letter-spacing:.05em;
+    text-transform:uppercase; line-height:1.3;
+  }
+  .pad-circle .org-text{
+    display:none;
+    color:#fff;
+    font-size:clamp(9px, 2.1vw, 12px); font-weight:700; line-height:1.15;
+    padding:0 8px;
+    overflow-wrap:break-word;
+    hyphens:auto;
+  }
+  .pad-circle .org-text.long{
+    font-size:clamp(8px, 1.8vw, 10.5px);
+  }
+  .pad.set .pad-circle .idle-text{ display:none; }
+  .pad.set .pad-circle .org-text{ display:block; }
+  .pad.set .pad-circle{ border-color:transparent; }
+  .pad.outline-state .pad-circle{ border:2px solid #b8b8b8; }
+  .pad.outline-state .pad-circle .org-text{ color:#8a8a8a; }
+
+  .pad-hint{
+    text-align:center; color:rgba(255,255,255,0.55);
+    font-size:clamp(10px, 2.3vw, 13px); letter-spacing:.05em; text-transform:uppercase;
+  }
+  .pads-hints{ display:flex; gap:14px; justify-content:center; }
+  .pads-hints > div{ flex:1; max-width:135px; }
+
+  .display{
+    background:#123326;
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:16px 14px;
+    text-align:center;
+    display:flex; flex-direction:column; gap:8px;
+    min-height:70px;
+    align-items:center; justify-content:center;
+  }
+
+  .puzzle-group{
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:18px 14px;
+    display:flex; flex-direction:column; gap:16px;
+  }
+  .display .waiting{
+    color:rgba(255,255,255,0.4);
+    font-size:clamp(11px, 2.6vw, 15px); letter-spacing:.1em; text-transform:uppercase; font-weight:700;
+  }
+  .display .headline{
+    color:#78e0a3; font-size:clamp(14px, 3.2vw, 19px); font-weight:700; letter-spacing:.04em;
+  }
+  .display .subtext{ color:rgba(255,255,255,0.85); font-size:clamp(12px, 2.8vw, 16px); }
+  .display .passcode{
+    color:var(--gold); font-size:clamp(22px, 5vw, 30px); font-weight:700; letter-spacing:.12em;
+    margin-top:2px;
+  }
+  .display .footer{ color:rgba(255,255,255,0.55); font-size:clamp(11px, 2.4vw, 14px); }
+
+  @media (prefers-reduced-motion: reduce){ *{ transition-duration:.001ms !important; } }
+
+  /* ============================================================
+     EDIT MODE — only appears with ?edit=1 in the URL
+     ============================================================ */
+  .editor{
+    background:#fff; border:1px solid #d7dae8; border-radius:6px;
+    padding:16px; display:none; flex-direction:column; gap:14px; font-family:var(--font);
+  }
+  .editor.show{ display:flex; }
+  .editor h2{ margin:0; font-size:14px; color:#1b2b2e; }
+  .editor .note{ font-size:11.5px; color:#666; line-height:1.5; margin:0; }
+  .row-edit{ border:1px solid #e2e5f0; border-radius:5px; padding:10px; display:flex; flex-direction:column; gap:6px; }
+  .row-edit .grid{ display:flex; gap:8px; align-items:center; }
+  .row-edit .grid > div{ flex:1; }
+  .row-edit label{ font-size:10px; font-weight:700; color:#555; text-transform:uppercase; display:block; margin-bottom:2px; }
+  .row-edit input[type=text]{ width:100%; padding:6px 7px; font-size:12.5px; border:1px solid #cfd3e4; border-radius:4px; font-family:var(--font); }
+  .row-edit input[type=color]{ width:44px; height:30px; padding:0; border:1px solid #cfd3e4; border-radius:4px; }
+  .row-edit .correct-flag{ display:flex; align-items:center; gap:5px; font-size:11px; color:#444; white-space:nowrap; }
+  .field{ display:flex; flex-direction:column; gap:4px; }
+  .field label{ font-size:10.5px; font-weight:700; color:#444; text-transform:uppercase; }
+  .field input[type=text], .field input[type=url]{ padding:7px 8px; font-size:13px; border:1px solid #cfd3e4; border-radius:4px; font-family:var(--font); }
+  .editor-actions{ display:flex; gap:8px; }
+  .editor-actions button{ flex:1; padding:10px; border-radius:5px; border:none; font-weight:700; font-size:12.5px; cursor:pointer; }
+  .btn-apply{ background:var(--navy); color:#fff; }
+  .btn-download{ background:var(--gold); color:#2b2200; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card" id="card"></div>
+  <div class="editor" id="editor"></div>
+</div>
+
+<script type="application/json" id="config-data">
+{
+  "eyebrow": "Light Box — Sample Analysis",
+  "colorOptions": [
+    { "name": "Blue",       "hex": "#2E3B8C", "padAOrg": "Lactobacillus Plantarum",  "padBOrg": "Giardia" },
+    { "name": "Green",      "hex": "#5CB85C", "padAOrg": "Bacillus Cereus",          "padBOrg": "Basidios" },
+    { "name": "Magenta",    "hex": "#C0448E", "padAOrg": "Lactobacillus Acidophilus","padBOrg": "Alginate" },
+    { "name": "Light Pink", "hex": "#F4C6DC", "padAOrg": "Amoeba",                   "padBOrg": "Rhizopus Stolonifer" },
+    { "name": "Orange",     "hex": "#E8792E", "padAOrg": "Poxviridae",               "padBOrg": "Candida" },
+    { "name": "Red",        "hex": "#E8402E", "padAOrg": "Caliciviridae",            "padBOrg": "Enterobacteriaceae" },
+    { "name": "Yellow",     "hex": "#E8D62E", "padAOrg": "Lice",                     "padBOrg": "Staphylococcus Aureus" },
+    { "name": "Blank",      "hex": "#FFFFFF", "outline": true, "padAOrg": "Baculoviruses", "padBOrg": "Aspergillaceae" }
+  ],
+  "correctColorName": "Orange",
+  "passcode": "2024",
+  "successHeadline": "\u2705 ANALYSIS COMPLETE",
+  "successSubtext": "Microorganism Match Confirmed",
+  "successFooter": "Proceed to the next stage of the investigation.",
+  "postMessageOnSolve": true
+}
+</script>
+
+<script>
+const PRISTINE_HTML = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+let CONFIG = JSON.parse(document.getElementById('config-data').textContent);
+
+const params = new URLSearchParams(location.search);
+const isEditMode = params.get('edit') === '1';
+
+const card = document.getElementById('card');
+const editorEl = document.getElementById('editor');
+
+let padIndex = [null, null]; // current color-option index for pad A (0) and pad B (1)
+let solved = false;
+
+function buildGame(){
+  card.innerHTML = '';
+  padIndex = [null, null];
+  solved = false;
+
+  const display = document.createElement('div');
+  display.className = 'display';
+  display.id = 'display';
+  display.innerHTML = `<div class="waiting">Awaiting samples</div>`;
+  card.appendChild(display);
+
+  const puzzleGroup = document.createElement('div');
+  puzzleGroup.className = 'puzzle-group';
+
+  const eyebrow = document.createElement('div');
+  eyebrow.className = 'eyebrow';
+  eyebrow.textContent = CONFIG.eyebrow;
+  puzzleGroup.appendChild(eyebrow);
+
+  const surface = document.createElement('div');
+  surface.className = 'box-surface';
+  surface.innerHTML = `
+    <div class="pad" data-pad="0">
+      <div class="pad-glow"></div>
+      <div class="pad-circle">
+        <div class="idle-text">Place<br>Sample<br>Here</div>
+        <div class="org-text"></div>
+      </div>
+    </div>
+    <div class="pad" data-pad="1">
+      <div class="pad-glow"></div>
+      <div class="pad-circle">
+        <div class="idle-text">Place<br>Sample<br>Here</div>
+        <div class="org-text"></div>
+      </div>
+    </div>
+  `;
+  puzzleGroup.appendChild(surface);
+
+  const hints = document.createElement('div');
+  hints.className = 'pads-hints';
+  hints.innerHTML = `<div class="pad-hint">Tap to cycle</div><div class="pad-hint">Tap to cycle</div>`;
+  puzzleGroup.appendChild(hints);
+
+  card.appendChild(puzzleGroup);
+
+  [0,1].forEach(padNum => {
+    const padEl = surface.querySelector(`[data-pad="${padNum}"]`);
+    padEl.addEventListener('click', () => {
+      const cur = padIndex[padNum];
+      const next = cur === null ? 0 : (cur + 1) % CONFIG.colorOptions.length;
+      setPad(padNum, next, padEl);
+    });
+  });
+}
+
+function setPad(padNum, optionIndex, padEl){
+  padIndex[padNum] = optionIndex;
+  const opt = CONFIG.colorOptions[optionIndex];
+  const glow = padEl.querySelector('.pad-glow');
+  const circle = padEl.querySelector('.pad-circle');
+  const orgText = padEl.querySelector('.org-text');
+
+  padEl.classList.add('active', 'set');
+  padEl.classList.toggle('outline-state', !!opt.outline);
+
+  if(opt.outline){
+    glow.style.background = 'transparent';
+    circle.style.background = 'transparent';
+    orgText.style.color = '#8a8a8a';
+  } else {
+    glow.style.background = `radial-gradient(circle, ${opt.hex}55 0%, transparent 70%)`;
+    circle.style.background = opt.hex;
+    orgText.style.color = '#fff';
+  }
+  orgText.textContent = padNum === 0 ? opt.padAOrg : opt.padBOrg;
+  orgText.classList.toggle('long', orgText.textContent.length > 14);
+
+  evaluate();
+}
+
+function evaluate(){
+  if(solved) return;
+  if(padIndex[0] === null || padIndex[1] === null) return;
+
+  const optA = CONFIG.colorOptions[padIndex[0]];
+  const optB = CONFIG.colorOptions[padIndex[1]];
+
+  if(optA.name === CONFIG.correctColorName && optB.name === CONFIG.correctColorName){
+    solve();
+  }
+}
+
+function solve(){
+  solved = true;
+  const display = document.getElementById('display');
+
+  display.innerHTML = `
+    <div class="headline">${CONFIG.successHeadline}</div>
+    <div class="subtext">${CONFIG.successSubtext}</div>
+    <div class="passcode">PASSCODE: ${CONFIG.passcode}</div>
+    <div class="footer">${CONFIG.successFooter}</div>
+  `;
+
+  if(CONFIG.postMessageOnSolve){
+    window.parent.postMessage({ event: 'room-solved', room: 'room-2', passcode: CONFIG.passcode }, '*');
+  }
+}
+
+buildGame();
+
+window.addEventListener('pageshow', (e) => { if(e.persisted) buildGame(); });
+
+/* ============================================================
+   EDIT MODE
+   ============================================================ */
+if(isEditMode){
+  editorEl.classList.add('show');
+  renderEditor();
+}
+
+function escapeAttr(str){
+  return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+function renderEditor(){
+  editorEl.innerHTML = `
+    <h2>Edit Room 2</h2>
+    <p class="note">Each row is one color from the reference chart. Edit the organism name shown on each pad, the color itself, and mark which row is the correct match. Click "Apply" to preview, then "Download updated game" to save a new file to re-upload.</p>
+    <div id="rowsList"></div>
+    <div class="field">
+      <label>Passcode</label>
+      <input type="text" id="passcodeInput" value="${escapeAttr(CONFIG.passcode)}">
+    </div>
+    <div class="editor-actions">
+      <button class="btn-apply" id="applyBtn">Apply &amp; Preview</button>
+      <button class="btn-download" id="downloadBtn">Download updated game</button>
+    </div>
+  `;
+  const rowsList = document.getElementById('rowsList');
+  CONFIG.colorOptions.forEach((opt, i) => {
+    const row = document.createElement('div');
+    row.className = 'row-edit';
+    row.innerHTML = `
+      <div class="grid">
+        <input type="color" data-field="hex" data-i="${i}" value="${opt.outline ? '#ffffff' : opt.hex}">
+        <div>
+          <label>Left pad organism</label>
+          <input type="text" data-field="padAOrg" data-i="${i}" value="${escapeAttr(opt.padAOrg)}">
+        </div>
+        <div>
+          <label>Right pad organism</label>
+          <input type="text" data-field="padBOrg" data-i="${i}" value="${escapeAttr(opt.padBOrg)}">
+        </div>
+        <label class="correct-flag">
+          <input type="radio" name="correctRow" value="${i}" ${opt.name === CONFIG.correctColorName ? 'checked' : ''}>
+          Correct
+        </label>
+      </div>
+    `;
+    rowsList.appendChild(row);
+  });
+
+  document.getElementById('applyBtn').addEventListener('click', applyEdits);
+  document.getElementById('downloadBtn').addEventListener('click', () => { applyEdits(); downloadUpdatedGame(); });
+}
+
+function applyEdits(){
+  const rowsList = document.getElementById('rowsList');
+  let correctIdx = 0;
+  rowsList.querySelectorAll('.row-edit').forEach((row, i) => {
+    CONFIG.colorOptions[i].hex = row.querySelector('[data-field="hex"]').value;
+    CONFIG.colorOptions[i].padAOrg = row.querySelector('[data-field="padAOrg"]').value;
+    CONFIG.colorOptions[i].padBOrg = row.querySelector('[data-field="padBOrg"]').value;
+    const radio = row.querySelector('input[type="radio"]');
+    if(radio.checked) correctIdx = i;
+  });
+  CONFIG.correctColorName = CONFIG.colorOptions[correctIdx].name;
+  CONFIG.passcode = document.getElementById('passcodeInput').value;
+  buildGame();
+  renderEditor();
+}
+
+function downloadUpdatedGame(){
+  const updatedJson = JSON.stringify(CONFIG, null, 2);
+  const updatedHtml = PRISTINE_HTML.replace(
+    /(<script type="application\/json" id="config-data">)([\s\S]*?)(<\/script>)/,
+    (m, open, _old, close) => open + '\n' + updatedJson + '\n' + close
+  );
+  const blob = new Blob([updatedHtml], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'room-2-light-box.html';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Room 2</title>
+<style>
+  :root{
+    --navy:#1f5c3e;
+    --border:#4c8868;
+    --white:#ffffff;
+    --gold:#d8a24a;
+    --cream:#f4f1ea;
+    --font: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:var(--font);
+    background:var(--navy);
+    min-height:100%;
+    display:flex; align-items:center; justify-content:center;
+    padding:18px;
+  }
+  .wrap{ width:100%; max-width:360px; display:flex; flex-direction:column; gap:14px; }
+
+  .card{
+    background:var(--navy);
+    border:1px solid var(--border);
+    border-radius:2px;
+    padding:22px 16px 26px;
+    display:flex; flex-direction:column; gap:20px;
+    box-shadow:0 10px 30px rgba(20,26,70,0.25);
+  }
+
+  .eyebrow{
+    color:rgba(255,255,255,0.6);
+    font-size:clamp(10px, 2.3vw, 13px); font-weight:700; letter-spacing:.14em;
+    text-transform:uppercase; text-align:center;
+  }
+
+  .box-surface{
+    background:var(--cream);
+    border-radius:8px;
+    padding:22px 14px;
+    display:flex; gap:14px; justify-content:center;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.12);
+  }
+
+  .pad{
+    flex:1; max-width:135px;
+    aspect-ratio: 1 / 1;
+    background:#fbfaf6;
+    border-radius:14px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    position:relative;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.10), inset 0 0 0 1px rgba(0,0,0,0.04);
+    user-select:none;
+    transition: box-shadow .3s ease;
+  }
+  .pad-glow{
+    position:absolute; inset:6%;
+    border-radius:12px;
+    opacity:0;
+    transition: opacity .35s ease, background .35s ease;
+    pointer-events:none;
+  }
+  .pad.active .pad-glow{ opacity:1; }
+
+  .pad-circle{
+    position:relative;
+    width:74%; height:74%;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    text-align:center;
+    border:2px solid var(--navy);
+    background:transparent;
+    transition: background .35s ease, border-color .35s ease, box-shadow .35s ease;
+  }
+  .pad-circle .idle-text{
+    color:var(--navy);
+    font-size:clamp(10px, 2.4vw, 13px); font-weight:700; letter-spacing:.05em;
+    text-transform:uppercase; line-height:1.3;
+  }
+  .pad-circle .org-text{
+    display:none;
+    color:#fff;
+    font-size:clamp(9px, 2.1vw, 12px); font-weight:700; line-height:1.15;
+    padding:0 8px;
+    overflow-wrap:break-word;
+    hyphens:auto;
+  }
+  .pad-circle .org-text.long{
+    font-size:clamp(8px, 1.8vw, 10.5px);
+  }
+  .pad.set .pad-circle .idle-text{ display:none; }
+  .pad.set .pad-circle .org-text{ display:block; }
+  .pad.set .pad-circle{ border-color:transparent; }
+  .pad.outline-state .pad-circle{ border:2px solid #b8b8b8; }
+  .pad.outline-state .pad-circle .org-text{ color:#8a8a8a; }
+
+  .pad-hint{
+    text-align:center; color:rgba(255,255,255,0.55);
+    font-size:clamp(10px, 2.3vw, 13px); letter-spacing:.05em; text-transform:uppercase;
+  }
+  .pads-hints{ display:flex; gap:14px; justify-content:center; }
+  .pads-hints > div{ flex:1; max-width:135px; }
+
+  .display{
+    background:#123326;
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:16px 14px;
+    text-align:center;
+    display:flex; flex-direction:column; gap:8px;
+    min-height:70px;
+    align-items:center; justify-content:center;
+  }
+
+  .puzzle-group{
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:18px 14px;
+    display:flex; flex-direction:column; gap:16px;
+  }
+  .display .waiting{
+    color:rgba(255,255,255,0.4);
+    font-size:clamp(11px, 2.6vw, 15px); letter-spacing:.1em; text-transform:uppercase; font-weight:700;
+  }
+  .display .headline{
+    color:#78e0a3; font-size:clamp(14px, 3.2vw, 19px); font-weight:700; letter-spacing:.04em;
+  }
+  .display .subtext{ color:rgba(255,255,255,0.85); font-size:clamp(12px, 2.8vw, 16px); }
+  .display .passcode{
+    color:var(--gold); font-size:clamp(22px, 5vw, 30px); font-weight:700; letter-spacing:.12em;
+    margin-top:2px;
+  }
+  .display .footer{ color:rgba(255,255,255,0.55); font-size:clamp(11px, 2.4vw, 14px); }
+
+  @media (prefers-reduced-motion: reduce){ *{ transition-duration:.001ms !important; } }
+
+  /* ============================================================
+     EDIT MODE — only appears with ?edit=1 in the URL
+     ============================================================ */
+  .editor{
+    background:#fff; border:1px solid #d7dae8; border-radius:6px;
+    padding:16px; display:none; flex-direction:column; gap:14px; font-family:var(--font);
+  }
+  .editor.show{ display:flex; }
+  .editor h2{ margin:0; font-size:14px; color:#1b2b2e; }
+  .editor .note{ font-size:11.5px; color:#666; line-height:1.5; margin:0; }
+  .row-edit{ border:1px solid #e2e5f0; border-radius:5px; padding:10px; display:flex; flex-direction:column; gap:6px; }
+  .row-edit .grid{ display:flex; gap:8px; align-items:center; }
+  .row-edit .grid > div{ flex:1; }
+  .row-edit label{ font-size:10px; font-weight:700; color:#555; text-transform:uppercase; display:block; margin-bottom:2px; }
+  .row-edit input[type=text]{ width:100%; padding:6px 7px; font-size:12.5px; border:1px solid #cfd3e4; border-radius:4px; font-family:var(--font); }
+  .row-edit input[type=color]{ width:44px; height:30px; padding:0; border:1px solid #cfd3e4; border-radius:4px; }
+  .row-edit .correct-flag{ display:flex; align-items:center; gap:5px; font-size:11px; color:#444; white-space:nowrap; }
+  .field{ display:flex; flex-direction:column; gap:4px; }
+  .field label{ font-size:10.5px; font-weight:700; color:#444; text-transform:uppercase; }
+  .field input[type=text], .field input[type=url]{ padding:7px 8px; font-size:13px; border:1px solid #cfd3e4; border-radius:4px; font-family:var(--font); }
+  .editor-actions{ display:flex; gap:8px; }
+  .editor-actions button{ flex:1; padding:10px; border-radius:5px; border:none; font-weight:700; font-size:12.5px; cursor:pointer; }
+  .btn-apply{ background:var(--navy); color:#fff; }
+  .btn-download{ background:var(--gold); color:#2b2200; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card" id="card"></div>
+  <div class="editor" id="editor"></div>
+</div>
+
+<script type="application/json" id="config-data">
+{
+  "eyebrow": "Light Box — Sample Analysis",
+  "colorOptions": [
+    { "name": "Blue",       "hex": "#2E3B8C", "padAOrg": "Lactobacillus Plantarum",  "padBOrg": "Giardia" },
+    { "name": "Green",      "hex": "#5CB85C", "padAOrg": "Bacillus Cereus",          "padBOrg": "Basidios" },
+    { "name": "Magenta",    "hex": "#C0448E", "padAOrg": "Lactobacillus Acidophilus","padBOrg": "Alginate" },
+    { "name": "Light Pink", "hex": "#F4C6DC", "padAOrg": "Amoeba",                   "padBOrg": "Rhizopus Stolonifer" },
+    { "name": "Orange",     "hex": "#E8792E", "padAOrg": "Poxviridae",               "padBOrg": "Candida" },
+    { "name": "Red",        "hex": "#E8402E", "padAOrg": "Caliciviridae",            "padBOrg": "Enterobacteriaceae" },
+    { "name": "Yellow",     "hex": "#E8D62E", "padAOrg": "Lice",                     "padBOrg": "Staphylococcus Aureus" },
+    { "name": "Blank",      "hex": "#FFFFFF", "outline": true, "padAOrg": "Baculoviruses", "padBOrg": "Aspergillaceae" }
+  ],
+  "correctColorName": "Orange",
+  "passcode": "2024",
+  "successHeadline": "\u2705 ANALYSIS COMPLETE",
+  "successSubtext": "Microorganism Match Confirmed",
+  "successFooter": "Proceed to the next stage of the investigation.",
+  "postMessageOnSolve": true
+}
+</script>
+
+<script>
+const PRISTINE_HTML = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+let CONFIG = JSON.parse(document.getElementById('config-data').textContent);
+
+const params = new URLSearchParams(location.search);
+const isEditMode = params.get('edit') === '1';
+
+const card = document.getElementById('card');
+const editorEl = document.getElementById('editor');
+
+let padIndex = [null, null]; // current color-option index for pad A (0) and pad B (1)
+let solved = false;
+
+function buildGame(){
+  card.innerHTML = '';
+  padIndex = [null, null];
+  solved = false;
+
+  const display = document.createElement('div');
+  display.className = 'display';
+  display.id = 'display';
+  display.innerHTML = `<div class="waiting">Awaiting samples</div>`;
+  card.appendChild(display);
+
+  const puzzleGroup = document.createElement('div');
+  puzzleGroup.className = 'puzzle-group';
+
+  const eyebrow = document.createElement('div');
+  eyebrow.className = 'eyebrow';
+  eyebrow.textContent = CONFIG.eyebrow;
+  puzzleGroup.appendChild(eyebrow);
+
+  const surface = document.createElement('div');
+  surface.className = 'box-surface';
+  surface.innerHTML = `
+    <div class="pad" data-pad="0">
+      <div class="pad-glow"></div>
+      <div class="pad-circle">
+        <div class="idle-text">Place<br>Sample<br>Here</div>
+        <div class="org-text"></div>
+      </div>
+    </div>
+    <div class="pad" data-pad="1">
+      <div class="pad-glow"></div>
+      <div class="pad-circle">
+        <div class="idle-text">Place<br>Sample<br>Here</div>
+        <div class="org-text"></div>
+      </div>
+    </div>
+  `;
+  puzzleGroup.appendChild(surface);
+
+  const hints = document.createElement('div');
+  hints.className = 'pads-hints';
+  hints.innerHTML = `<div class="pad-hint">Tap to cycle</div><div class="pad-hint">Tap to cycle</div>`;
+  puzzleGroup.appendChild(hints);
+
+  card.appendChild(puzzleGroup);
+
+  [0,1].forEach(padNum => {
+    const padEl = surface.querySelector(`[data-pad="${padNum}"]`);
+    padEl.addEventListener('click', () => {
+      const cur = padIndex[padNum];
+      const next = cur === null ? 0 : (cur + 1) % CONFIG.colorOptions.length;
+      setPad(padNum, next, padEl);
+    });
+  });
+}
+
+function setPad(padNum, optionIndex, padEl){
+  padIndex[padNum] = optionIndex;
+  const opt = CONFIG.colorOptions[optionIndex];
+  const glow = padEl.querySelector('.pad-glow');
+  const circle = padEl.querySelector('.pad-circle');
+  const orgText = padEl.querySelector('.org-text');
+
+  padEl.classList.add('active', 'set');
+  padEl.classList.toggle('outline-state', !!opt.outline);
+
+  if(opt.outline){
+    glow.style.background = 'transparent';
+    circle.style.background = 'transparent';
+    orgText.style.color = '#8a8a8a';
+  } else {
+    glow.style.background = `radial-gradient(circle, ${opt.hex}55 0%, transparent 70%)`;
+    circle.style.background = opt.hex;
+    orgText.style.color = '#fff';
+  }
+  orgText.textContent = padNum === 0 ? opt.padAOrg : opt.padBOrg;
+  orgText.classList.toggle('long', orgText.textContent.length > 14);
+
+  evaluate();
+}
+
+function evaluate(){
+  if(solved) return;
+  if(padIndex[0] === null || padIndex[1] === null) return;
+
+  const optA = CONFIG.colorOptions[padIndex[0]];
+  const optB = CONFIG.colorOptions[padIndex[1]];
+
+  if(optA.name === CONFIG.correctColorName && optB.name === CONFIG.correctColorName){
+    solve();
+  }
+}
+
+function solve(){
+  solved = true;
+  const display = document.getElementById('display');
+
+  display.innerHTML = `
+    <div class="headline">${CONFIG.successHeadline}</div>
+    <div class="subtext">${CONFIG.successSubtext}</div>
+    <div class="passcode">PASSCODE: ${CONFIG.passcode}</div>
+    <div class="footer">${CONFIG.successFooter}</div>
+  `;
+
+  if(CONFIG.postMessageOnSolve){
+    window.parent.postMessage({ event: 'room-solved', room: 'room-2', passcode: CONFIG.passcode }, '*');
+  }
+}
+
+buildGame();
+
+window.addEventListener('pageshow', (e) => { if(e.persisted) buildGame(); });
+
+/* ============================================================
+   EDIT MODE
+   ============================================================ */
+if(isEditMode){
+  editorEl.classList.add('show');
+  renderEditor();
+}
+
+function escapeAttr(str){
+  return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+function renderEditor(){
+  editorEl.innerHTML = `
+    <h2>Edit Room 2</h2>
+    <p class="note">Each row is one color from the reference chart. Edit the organism name shown on each pad, the color itself, and mark which row is the correct match. Click "Apply" to preview, then "Download updated game" to save a new file to re-upload.</p>
+    <div id="rowsList"></div>
+    <div class="field">
+      <label>Passcode</label>
+      <input type="text" id="passcodeInput" value="${escapeAttr(CONFIG.passcode)}">
+    </div>
+    <div class="editor-actions">
+      <button class="btn-apply" id="applyBtn">Apply &amp; Preview</button>
+      <button class="btn-download" id="downloadBtn">Download updated game</button>
+    </div>
+  `;
+  const rowsList = document.getElementById('rowsList');
+  CONFIG.colorOptions.forEach((opt, i) => {
+    const row = document.createElement('div');
+    row.className = 'row-edit';
+    row.innerHTML = `
+      <div class="grid">
+        <input type="color" data-field="hex" data-i="${i}" value="${opt.outline ? '#ffffff' : opt.hex}">
+        <div>
+          <label>Left pad organism</label>
+          <input type="text" data-field="padAOrg" data-i="${i}" value="${escapeAttr(opt.padAOrg)}">
+        </div>
+        <div>
+          <label>Right pad organism</label>
+          <input type="text" data-field="padBOrg" data-i="${i}" value="${escapeAttr(opt.padBOrg)}">
+        </div>
+        <label class="correct-flag">
+          <input type="radio" name="correctRow" value="${i}" ${opt.name === CONFIG.correctColorName ? 'checked' : ''}>
+          Correct
+        </label>
+      </div>
+    `;
+    rowsList.appendChild(row);
+  });
+
+  document.getElementById('applyBtn').addEventListener('click', applyEdits);
+  document.getElementById('downloadBtn').addEventListener('click', () => { applyEdits(); downloadUpdatedGame(); });
+}
+
+function applyEdits(){
+  const rowsList = document.getElementById('rowsList');
+  let correctIdx = 0;
+  rowsList.querySelectorAll('.row-edit').forEach((row, i) => {
+    CONFIG.colorOptions[i].hex = row.querySelector('[data-field="hex"]').value;
+    CONFIG.colorOptions[i].padAOrg = row.querySelector('[data-field="padAOrg"]').value;
+    CONFIG.colorOptions[i].padBOrg = row.querySelector('[data-field="padBOrg"]').value;
+    const radio = row.querySelector('input[type="radio"]');
+    if(radio.checked) correctIdx = i;
+  });
+  CONFIG.correctColorName = CONFIG.colorOptions[correctIdx].name;
+  CONFIG.passcode = document.getElementById('passcodeInput').value;
+  buildGame();
+  renderEditor();
+}
+
+function downloadUpdatedGame(){
+  const updatedJson = JSON.stringify(CONFIG, null, 2);
+  const updatedHtml = PRISTINE_HTML.replace(
+    /(<script type="application\/json" id="config-data">)([\s\S]*?)(<\/script>)/,
+    (m, open, _old, close) => open + '\n' + updatedJson + '\n' + close
+  );
+  const blob = new Blob([updatedHtml], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'room-2-light-box.html';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Room 2</title>
+<style>
+  :root{
+    --navy:#1f5c3e;
+    --border:#4c8868;
+    --white:#ffffff;
+    --gold:#d8a24a;
+    --cream:#f4f1ea;
+    --font: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:var(--font);
+    background:var(--navy);
+    min-height:100%;
+    display:flex; align-items:center; justify-content:center;
+    padding:18px;
+  }
+  .wrap{ width:100%; max-width:360px; display:flex; flex-direction:column; gap:14px; }
+
+  .card{
+    background:var(--navy);
+    border:1px solid var(--border);
+    border-radius:2px;
+    padding:22px 16px 26px;
+    display:flex; flex-direction:column; gap:20px;
+    box-shadow:0 10px 30px rgba(20,26,70,0.25);
+  }
+
+  .eyebrow{
+    color:rgba(255,255,255,0.6);
+    font-size:clamp(10px, 2.3vw, 13px); font-weight:700; letter-spacing:.14em;
+    text-transform:uppercase; text-align:center;
+  }
+
+  .box-surface{
+    background:var(--cream);
+    border-radius:8px;
+    padding:22px 14px;
+    display:flex; gap:14px; justify-content:center;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.12);
+  }
+
+  .pad{
+    flex:1; max-width:135px;
+    aspect-ratio: 1 / 1;
+    background:#fbfaf6;
+    border-radius:14px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    position:relative;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.10), inset 0 0 0 1px rgba(0,0,0,0.04);
+    user-select:none;
+    transition: box-shadow .3s ease;
+  }
+  .pad-glow{
+    position:absolute; inset:6%;
+    border-radius:12px;
+    opacity:0;
+    transition: opacity .35s ease, background .35s ease;
+    pointer-events:none;
+  }
+  .pad.active .pad-glow{ opacity:1; }
+
+  .pad-circle{
+    position:relative;
+    width:74%; height:74%;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    text-align:center;
+    border:2px solid var(--navy);
+    background:transparent;
+    transition: background .35s ease, border-color .35s ease, box-shadow .35s ease;
+  }
+  .pad-circle .idle-text{
+    color:var(--navy);
+    font-size:clamp(10px, 2.4vw, 13px); font-weight:700; letter-spacing:.05em;
+    text-transform:uppercase; line-height:1.3;
+  }
+  .pad-circle .org-text{
+    display:none;
+    color:#fff;
+    font-size:clamp(9px, 2.1vw, 12px); font-weight:700; line-height:1.15;
+    padding:0 8px;
+    overflow-wrap:break-word;
+    hyphens:auto;
+  }
+  .pad-circle .org-text.long{
+    font-size:clamp(8px, 1.8vw, 10.5px);
+  }
+  .pad.set .pad-circle .idle-text{ display:none; }
+  .pad.set .pad-circle .org-text{ display:block; }
+  .pad.set .pad-circle{ border-color:transparent; }
+  .pad.outline-state .pad-circle{ border:2px solid #b8b8b8; }
+  .pad.outline-state .pad-circle .org-text{ color:#8a8a8a; }
+
+  .pad-hint{
+    text-align:center; color:rgba(255,255,255,0.55);
+    font-size:clamp(10px, 2.3vw, 13px); letter-spacing:.05em; text-transform:uppercase;
+  }
+  .pads-hints{ display:flex; gap:14px; justify-content:center; }
+  .pads-hints > div{ flex:1; max-width:135px; }
+
+  .display{
+    background:#123326;
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:16px 14px;
+    text-align:center;
+    display:flex; flex-direction:column; gap:8px;
+    min-height:70px;
+    align-items:center; justify-content:center;
+  }
+
+  .puzzle-group{
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:18px 14px;
+    display:flex; flex-direction:column; gap:16px;
+  }
+  .display .waiting{
+    color:rgba(255,255,255,0.4);
+    font-size:clamp(11px, 2.6vw, 15px); letter-spacing:.1em; text-transform:uppercase; font-weight:700;
+  }
+  .display .headline{
+    color:#78e0a3; font-size:clamp(14px, 3.2vw, 19px); font-weight:700; letter-spacing:.04em;
+  }
+  .display .subtext{ color:rgba(255,255,255,0.85); font-size:clamp(12px, 2.8vw, 16px); }
+  .display .passcode{
+    color:var(--gold); font-size:clamp(22px, 5vw, 30px); font-weight:700; letter-spacing:.12em;
+    margin-top:2px;
+  }
+  .display .footer{ color:rgba(255,255,255,0.55); font-size:clamp(11px, 2.4vw, 14px); }
+
+  @media (prefers-reduced-motion: reduce){ *{ transition-duration:.001ms !important; } }
+
+  /* ============================================================
+     EDIT MODE — only appears with ?edit=1 in the URL
+     ============================================================ */
+  .editor{
+    background:#fff; border:1px solid #d7dae8; border-radius:6px;
+    padding:16px; display:none; flex-direction:column; gap:14px; font-family:var(--font);
+  }
+  .editor.show{ display:flex; }
+  .editor h2{ margin:0; font-size:14px; color:#1b2b2e; }
+  .editor .note{ font-size:11.5px; color:#666; line-height:1.5; margin:0; }
+  .row-edit{ border:1px solid #e2e5f0; border-radius:5px; padding:10px; display:flex; flex-direction:column; gap:6px; }
+  .row-edit .grid{ display:flex; gap:8px; align-items:center; }
+  .row-edit .grid > div{ flex:1; }
+  .row-edit label{ font-size:10px; font-weight:700; color:#555; text-transform:uppercase; display:block; margin-bottom:2px; }
+  .row-edit input[type=text]{ width:100%; padding:6px 7px; font-size:12.5px; border:1px solid #cfd3e4; border-radius:4px; font-family:var(--font); }
+  .row-edit input[type=color]{ width:44px; height:30px; padding:0; border:1px solid #cfd3e4; border-radius:4px; }
+  .row-edit .correct-flag{ display:flex; align-items:center; gap:5px; font-size:11px; color:#444; white-space:nowrap; }
+  .field{ display:flex; flex-direction:column; gap:4px; }
+  .field label{ font-size:10.5px; font-weight:700; color:#444; text-transform:uppercase; }
+  .field input[type=text], .field input[type=url]{ padding:7px 8px; font-size:13px; border:1px solid #cfd3e4; border-radius:4px; font-family:var(--font); }
+  .editor-actions{ display:flex; gap:8px; }
+  .editor-actions button{ flex:1; padding:10px; border-radius:5px; border:none; font-weight:700; font-size:12.5px; cursor:pointer; }
+  .btn-apply{ background:var(--navy); color:#fff; }
+  .btn-download{ background:var(--gold); color:#2b2200; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card" id="card"></div>
+  <div class="editor" id="editor"></div>
+</div>
+
+<script type="application/json" id="config-data">
+{
+  "eyebrow": "Light Box — Sample Analysis",
+  "colorOptions": [
+    { "name": "Blue",       "hex": "#2E3B8C", "padAOrg": "Lactobacillus Plantarum",  "padBOrg": "Giardia" },
+    { "name": "Green",      "hex": "#5CB85C", "padAOrg": "Bacillus Cereus",          "padBOrg": "Basidios" },
+    { "name": "Magenta",    "hex": "#C0448E", "padAOrg": "Lactobacillus Acidophilus","padBOrg": "Alginate" },
+    { "name": "Light Pink", "hex": "#F4C6DC", "padAOrg": "Amoeba",                   "padBOrg": "Rhizopus Stolonifer" },
+    { "name": "Orange",     "hex": "#E8792E", "padAOrg": "Poxviridae",               "padBOrg": "Candida" },
+    { "name": "Red",        "hex": "#E8402E", "padAOrg": "Caliciviridae",            "padBOrg": "Enterobacteriaceae" },
+    { "name": "Yellow",     "hex": "#E8D62E", "padAOrg": "Lice",                     "padBOrg": "Staphylococcus Aureus" },
+    { "name": "Blank",      "hex": "#FFFFFF", "outline": true, "padAOrg": "Baculoviruses", "padBOrg": "Aspergillaceae" }
+  ],
+  "correctColorName": "Orange",
+  "passcode": "2024",
+  "successHeadline": "\u2705 ANALYSIS COMPLETE",
+  "successSubtext": "Microorganism Match Confirmed",
+  "successFooter": "Proceed to the next stage of the investigation.",
+  "postMessageOnSolve": true
+}
+</script>
+
+<script>
+const PRISTINE_HTML = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+let CONFIG = JSON.parse(document.getElementById('config-data').textContent);
+
+const params = new URLSearchParams(location.search);
+const isEditMode = params.get('edit') === '1';
+
+const card = document.getElementById('card');
+const editorEl = document.getElementById('editor');
+
+let padIndex = [null, null]; // current color-option index for pad A (0) and pad B (1)
+let solved = false;
+
+function buildGame(){
+  card.innerHTML = '';
+  padIndex = [null, null];
+  solved = false;
+
+  const display = document.createElement('div');
+  display.className = 'display';
+  display.id = 'display';
+  display.innerHTML = `<div class="waiting">Awaiting samples</div>`;
+  card.appendChild(display);
+
+  const puzzleGroup = document.createElement('div');
+  puzzleGroup.className = 'puzzle-group';
+
+  const eyebrow = document.createElement('div');
+  eyebrow.className = 'eyebrow';
+  eyebrow.textContent = CONFIG.eyebrow;
+  puzzleGroup.appendChild(eyebrow);
+
+  const surface = document.createElement('div');
+  surface.className = 'box-surface';
+  surface.innerHTML = `
+    <div class="pad" data-pad="0">
+      <div class="pad-glow"></div>
+      <div class="pad-circle">
+        <div class="idle-text">Place<br>Sample<br>Here</div>
+        <div class="org-text"></div>
+      </div>
+    </div>
+    <div class="pad" data-pad="1">
+      <div class="pad-glow"></div>
+      <div class="pad-circle">
+        <div class="idle-text">Place<br>Sample<br>Here</div>
+        <div class="org-text"></div>
+      </div>
+    </div>
+  `;
+  puzzleGroup.appendChild(surface);
+
+  const hints = document.createElement('div');
+  hints.className = 'pads-hints';
+  hints.innerHTML = `<div class="pad-hint">Tap to cycle</div><div class="pad-hint">Tap to cycle</div>`;
+  puzzleGroup.appendChild(hints);
+
+  card.appendChild(puzzleGroup);
+
+  [0,1].forEach(padNum => {
+    const padEl = surface.querySelector(`[data-pad="${padNum}"]`);
+    padEl.addEventListener('click', () => {
+      const cur = padIndex[padNum];
+      const next = cur === null ? 0 : (cur + 1) % CONFIG.colorOptions.length;
+      setPad(padNum, next, padEl);
+    });
+  });
+}
+
+function setPad(padNum, optionIndex, padEl){
+  padIndex[padNum] = optionIndex;
+  const opt = CONFIG.colorOptions[optionIndex];
+  const glow = padEl.querySelector('.pad-glow');
+  const circle = padEl.querySelector('.pad-circle');
+  const orgText = padEl.querySelector('.org-text');
+
+  padEl.classList.add('active', 'set');
+  padEl.classList.toggle('outline-state', !!opt.outline);
+
+  if(opt.outline){
+    glow.style.background = 'transparent';
+    circle.style.background = 'transparent';
+    orgText.style.color = '#8a8a8a';
+  } else {
+    glow.style.background = `radial-gradient(circle, ${opt.hex}55 0%, transparent 70%)`;
+    circle.style.background = opt.hex;
+    orgText.style.color = '#fff';
+  }
+  orgText.textContent = padNum === 0 ? opt.padAOrg : opt.padBOrg;
+  orgText.classList.toggle('long', orgText.textContent.length > 14);
+
+  evaluate();
+}
+
+function evaluate(){
+  if(solved) return;
+  if(padIndex[0] === null || padIndex[1] === null) return;
+
+  const optA = CONFIG.colorOptions[padIndex[0]];
+  const optB = CONFIG.colorOptions[padIndex[1]];
+
+  if(optA.name === CONFIG.correctColorName && optB.name === CONFIG.correctColorName){
+    solve();
+  }
+}
+
+function solve(){
+  solved = true;
+  const display = document.getElementById('display');
+
+  display.innerHTML = `
+    <div class="headline">${CONFIG.successHeadline}</div>
+    <div class="subtext">${CONFIG.successSubtext}</div>
+    <div class="passcode">PASSCODE: ${CONFIG.passcode}</div>
+    <div class="footer">${CONFIG.successFooter}</div>
+  `;
+
+  if(CONFIG.postMessageOnSolve){
+    window.parent.postMessage({ event: 'room-solved', room: 'room-2', passcode: CONFIG.passcode }, '*');
+  }
+}
+
+buildGame();
+
+window.addEventListener('pageshow', (e) => { if(e.persisted) buildGame(); });
+
+/* ============================================================
+   EDIT MODE
+   ============================================================ */
+if(isEditMode){
+  editorEl.classList.add('show');
+  renderEditor();
+}
+
+function escapeAttr(str){
+  return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+function renderEditor(){
+  editorEl.innerHTML = `
+    <h2>Edit Room 2</h2>
+    <p class="note">Each row is one color from the reference chart. Edit the organism name shown on each pad, the color itself, and mark which row is the correct match. Click "Apply" to preview, then "Download updated game" to save a new file to re-upload.</p>
+    <div id="rowsList"></div>
+    <div class="field">
+      <label>Passcode</label>
+      <input type="text" id="passcodeInput" value="${escapeAttr(CONFIG.passcode)}">
+    </div>
+    <div class="editor-actions">
+      <button class="btn-apply" id="applyBtn">Apply &amp; Preview</button>
+      <button class="btn-download" id="downloadBtn">Download updated game</button>
+    </div>
+  `;
+  const rowsList = document.getElementById('rowsList');
+  CONFIG.colorOptions.forEach((opt, i) => {
+    const row = document.createElement('div');
+    row.className = 'row-edit';
+    row.innerHTML = `
+      <div class="grid">
+        <input type="color" data-field="hex" data-i="${i}" value="${opt.outline ? '#ffffff' : opt.hex}">
+        <div>
+          <label>Left pad organism</label>
+          <input type="text" data-field="padAOrg" data-i="${i}" value="${escapeAttr(opt.padAOrg)}">
+        </div>
+        <div>
+          <label>Right pad organism</label>
+          <input type="text" data-field="padBOrg" data-i="${i}" value="${escapeAttr(opt.padBOrg)}">
+        </div>
+        <label class="correct-flag">
+          <input type="radio" name="correctRow" value="${i}" ${opt.name === CONFIG.correctColorName ? 'checked' : ''}>
+          Correct
+        </label>
+      </div>
+    `;
+    rowsList.appendChild(row);
+  });
+
+  document.getElementById('applyBtn').addEventListener('click', applyEdits);
+  document.getElementById('downloadBtn').addEventListener('click', () => { applyEdits(); downloadUpdatedGame(); });
+}
+
+function applyEdits(){
+  const rowsList = document.getElementById('rowsList');
+  let correctIdx = 0;
+  rowsList.querySelectorAll('.row-edit').forEach((row, i) => {
+    CONFIG.colorOptions[i].hex = row.querySelector('[data-field="hex"]').value;
+    CONFIG.colorOptions[i].padAOrg = row.querySelector('[data-field="padAOrg"]').value;
+    CONFIG.colorOptions[i].padBOrg = row.querySelector('[data-field="padBOrg"]').value;
+    const radio = row.querySelector('input[type="radio"]');
+    if(radio.checked) correctIdx = i;
+  });
+  CONFIG.correctColorName = CONFIG.colorOptions[correctIdx].name;
+  CONFIG.passcode = document.getElementById('passcodeInput').value;
+  buildGame();
+  renderEditor();
+}
+
+function downloadUpdatedGame(){
+  const updatedJson = JSON.stringify(CONFIG, null, 2);
+  const updatedHtml = PRISTINE_HTML.replace(
+    /(<script type="application\/json" id="config-data">)([\s\S]*?)(<\/script>)/,
+    (m, open, _old, close) => open + '\n' + updatedJson + '\n' + close
+  );
+  const blob = new Blob([updatedHtml], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'room-2-light-box.html';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Room 2</title>
+<style>
+  :root{
+    --navy:#1f5c3e;
+    --border:#4c8868;
+    --white:#ffffff;
+    --gold:#d8a24a;
+    --cream:#f4f1ea;
+    --font: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:var(--font);
+    background:var(--navy);
+    min-height:100%;
+    display:flex; align-items:center; justify-content:center;
+    padding:18px;
+  }
+  .wrap{ width:100%; max-width:360px; display:flex; flex-direction:column; gap:14px; }
+
+  .card{
+    background:var(--navy);
+    border:1px solid var(--border);
+    border-radius:2px;
+    padding:22px 16px 26px;
+    display:flex; flex-direction:column; gap:20px;
+    box-shadow:0 10px 30px rgba(20,26,70,0.25);
+  }
+
+  .eyebrow{
+    color:rgba(255,255,255,0.6);
+    font-size:clamp(10px, 2.3vw, 13px); font-weight:700; letter-spacing:.14em;
+    text-transform:uppercase; text-align:center;
+  }
+
+  .box-surface{
+    background:var(--cream);
+    border-radius:8px;
+    padding:22px 14px;
+    display:flex; gap:14px; justify-content:center;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.12);
+  }
+
+  .pad{
+    flex:1; max-width:135px;
+    aspect-ratio: 1 / 1;
+    background:#fbfaf6;
+    border-radius:14px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    position:relative;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.10), inset 0 0 0 1px rgba(0,0,0,0.04);
+    user-select:none;
+    transition: box-shadow .3s ease;
+  }
+  .pad-glow{
+    position:absolute; inset:6%;
+    border-radius:12px;
+    opacity:0;
+    transition: opacity .35s ease, background .35s ease;
+    pointer-events:none;
+  }
+  .pad.active .pad-glow{ opacity:1; }
+
+  .pad-circle{
+    position:relative;
+    width:74%; height:74%;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    text-align:center;
+    border:2px solid var(--navy);
+    background:transparent;
+    transition: background .35s ease, border-color .35s ease, box-shadow .35s ease;
+  }
+  .pad-circle .idle-text{
+    color:var(--navy);
+    font-size:clamp(10px, 2.4vw, 13px); font-weight:700; letter-spacing:.05em;
+    text-transform:uppercase; line-height:1.3;
+  }
+  .pad-circle .org-text{
+    display:none;
+    color:#fff;
+    font-size:clamp(9px, 2.1vw, 12px); font-weight:700; line-height:1.15;
+    padding:0 8px;
+    overflow-wrap:break-word;
+    hyphens:auto;
+  }
+  .pad-circle .org-text.long{
+    font-size:clamp(8px, 1.8vw, 10.5px);
+  }
+  .pad.set .pad-circle .idle-text{ display:none; }
+  .pad.set .pad-circle .org-text{ display:block; }
+  .pad.set .pad-circle{ border-color:transparent; }
+  .pad.outline-state .pad-circle{ border:2px solid #b8b8b8; }
+  .pad.outline-state .pad-circle .org-text{ color:#8a8a8a; }
+
+  .pad-hint{
+    text-align:center; color:rgba(255,255,255,0.55);
+    font-size:clamp(10px, 2.3vw, 13px); letter-spacing:.05em; text-transform:uppercase;
+  }
+  .pads-hints{ display:flex; gap:14px; justify-content:center; }
+  .pads-hints > div{ flex:1; max-width:135px; }
+
+  .display{
+    background:#123326;
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:16px 14px;
+    text-align:center;
+    display:flex; flex-direction:column; gap:8px;
+    min-height:70px;
+    align-items:center; justify-content:center;
+  }
+
+  .puzzle-group{
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:18px 14px;
+    display:flex; flex-direction:column; gap:16px;
+  }
+  .display .waiting{
+    color:rgba(255,255,255,0.4);
+    font-size:clamp(11px, 2.6vw, 15px); letter-spacing:.1em; text-transform:uppercase; font-weight:700;
+  }
+  .display .headline{
+    color:#78e0a3; font-size:clamp(14px, 3.2vw, 19px); font-weight:700; letter-spacing:.04em;
+  }
+  .display .subtext{ color:rgba(255,255,255,0.85); font-size:clamp(12px, 2.8vw, 16px); }
+  .display .passcode{
+    color:var(--gold); font-size:clamp(22px, 5vw, 30px); font-weight:700; letter-spacing:.12em;
+    margin-top:2px;
+  }
+  .display .footer{ color:rgba(255,255,255,0.55); font-size:clamp(11px, 2.4vw, 14px); }
+
+  @media (prefers-reduced-motion: reduce){ *{ transition-duration:.001ms !important; } }
+
+  /* ============================================================
+     EDIT MODE — only appears with ?edit=1 in the URL
+     ============================================================ */
+  .editor{
+    background:#fff; border:1px solid #d7dae8; border-radius:6px;
+    padding:16px; display:none; flex-direction:column; gap:14px; font-family:var(--font);
+  }
+  .editor.show{ display:flex; }
+  .editor h2{ margin:0; font-size:14px; color:#1b2b2e; }
+  .editor .note{ font-size:11.5px; color:#666; line-height:1.5; margin:0; }
+  .row-edit{ border:1px solid #e2e5f0; border-radius:5px; padding:10px; display:flex; flex-direction:column; gap:6px; }
+  .row-edit .grid{ display:flex; gap:8px; align-items:center; }
+  .row-edit .grid > div{ flex:1; }
+  .row-edit label{ font-size:10px; font-weight:700; color:#555; text-transform:uppercase; display:block; margin-bottom:2px; }
+  .row-edit input[type=text]{ width:100%; padding:6px 7px; font-size:12.5px; border:1px solid #cfd3e4; border-radius:4px; font-family:var(--font); }
+  .row-edit input[type=color]{ width:44px; height:30px; padding:0; border:1px solid #cfd3e4; border-radius:4px; }
+  .row-edit .correct-flag{ display:flex; align-items:center; gap:5px; font-size:11px; color:#444; white-space:nowrap; }
+  .field{ display:flex; flex-direction:column; gap:4px; }
+  .field label{ font-size:10.5px; font-weight:700; color:#444; text-transform:uppercase; }
+  .field input[type=text], .field input[type=url]{ padding:7px 8px; font-size:13px; border:1px solid #cfd3e4; border-radius:4px; font-family:var(--font); }
+  .editor-actions{ display:flex; gap:8px; }
+  .editor-actions button{ flex:1; padding:10px; border-radius:5px; border:none; font-weight:700; font-size:12.5px; cursor:pointer; }
+  .btn-apply{ background:var(--navy); color:#fff; }
+  .btn-download{ background:var(--gold); color:#2b2200; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card" id="card"></div>
+  <div class="editor" id="editor"></div>
+</div>
+
+<script type="application/json" id="config-data">
+{
+  "eyebrow": "Light Box — Sample Analysis",
+  "colorOptions": [
+    { "name": "Blue",       "hex": "#2E3B8C", "padAOrg": "Lactobacillus Plantarum",  "padBOrg": "Giardia" },
+    { "name": "Green",      "hex": "#5CB85C", "padAOrg": "Bacillus Cereus",          "padBOrg": "Basidios" },
+    { "name": "Magenta",    "hex": "#C0448E", "padAOrg": "Lactobacillus Acidophilus","padBOrg": "Alginate" },
+    { "name": "Light Pink", "hex": "#F4C6DC", "padAOrg": "Amoeba",                   "padBOrg": "Rhizopus Stolonifer" },
+    { "name": "Orange",     "hex": "#E8792E", "padAOrg": "Poxviridae",               "padBOrg": "Candida" },
+    { "name": "Red",        "hex": "#E8402E", "padAOrg": "Caliciviridae",            "padBOrg": "Enterobacteriaceae" },
+    { "name": "Yellow",     "hex": "#E8D62E", "padAOrg": "Lice",                     "padBOrg": "Staphylococcus Aureus" },
+    { "name": "Blank",      "hex": "#FFFFFF", "outline": true, "padAOrg": "Baculoviruses", "padBOrg": "Aspergillaceae" }
+  ],
+  "correctColorName": "Orange",
+  "passcode": "2024",
+  "successHeadline": "\u2705 ANALYSIS COMPLETE",
+  "successSubtext": "Microorganism Match Confirmed",
+  "successFooter": "Proceed to the next stage of the investigation.",
+  "postMessageOnSolve": true
+}
+</script>
+
+<script>
+const PRISTINE_HTML = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+let CONFIG = JSON.parse(document.getElementById('config-data').textContent);
+
+const params = new URLSearchParams(location.search);
+const isEditMode = params.get('edit') === '1';
+
+const card = document.getElementById('card');
+const editorEl = document.getElementById('editor');
+
+let padIndex = [null, null]; // current color-option index for pad A (0) and pad B (1)
+let solved = false;
+
+function buildGame(){
+  card.innerHTML = '';
+  padIndex = [null, null];
+  solved = false;
+
+  const display = document.createElement('div');
+  display.className = 'display';
+  display.id = 'display';
+  display.innerHTML = `<div class="waiting">Awaiting samples</div>`;
+  card.appendChild(display);
+
+  const puzzleGroup = document.createElement('div');
+  puzzleGroup.className = 'puzzle-group';
+
+  const eyebrow = document.createElement('div');
+  eyebrow.className = 'eyebrow';
+  eyebrow.textContent = CONFIG.eyebrow;
+  puzzleGroup.appendChild(eyebrow);
+
+  const surface = document.createElement('div');
+  surface.className = 'box-surface';
+  surface.innerHTML = `
+    <div class="pad" data-pad="0">
+      <div class="pad-glow"></div>
+      <div class="pad-circle">
+        <div class="idle-text">Place<br>Sample<br>Here</div>
+        <div class="org-text"></div>
+      </div>
+    </div>
+    <div class="pad" data-pad="1">
+      <div class="pad-glow"></div>
+      <div class="pad-circle">
+        <div class="idle-text">Place<br>Sample<br>Here</div>
+        <div class="org-text"></div>
+      </div>
+    </div>
+  `;
+  puzzleGroup.appendChild(surface);
+
+  const hints = document.createElement('div');
+  hints.className = 'pads-hints';
+  hints.innerHTML = `<div class="pad-hint">Tap to cycle</div><div class="pad-hint">Tap to cycle</div>`;
+  puzzleGroup.appendChild(hints);
+
+  card.appendChild(puzzleGroup);
+
+  [0,1].forEach(padNum => {
+    const padEl = surface.querySelector(`[data-pad="${padNum}"]`);
+    padEl.addEventListener('click', () => {
+      const cur = padIndex[padNum];
+      const next = cur === null ? 0 : (cur + 1) % CONFIG.colorOptions.length;
+      setPad(padNum, next, padEl);
+    });
+  });
+}
+
+function setPad(padNum, optionIndex, padEl){
+  padIndex[padNum] = optionIndex;
+  const opt = CONFIG.colorOptions[optionIndex];
+  const glow = padEl.querySelector('.pad-glow');
+  const circle = padEl.querySelector('.pad-circle');
+  const orgText = padEl.querySelector('.org-text');
+
+  padEl.classList.add('active', 'set');
+  padEl.classList.toggle('outline-state', !!opt.outline);
+
+  if(opt.outline){
+    glow.style.background = 'transparent';
+    circle.style.background = 'transparent';
+    orgText.style.color = '#8a8a8a';
+  } else {
+    glow.style.background = `radial-gradient(circle, ${opt.hex}55 0%, transparent 70%)`;
+    circle.style.background = opt.hex;
+    orgText.style.color = '#fff';
+  }
+  orgText.textContent = padNum === 0 ? opt.padAOrg : opt.padBOrg;
+  orgText.classList.toggle('long', orgText.textContent.length > 14);
+
+  evaluate();
+}
+
+function evaluate(){
+  if(solved) return;
+  if(padIndex[0] === null || padIndex[1] === null) return;
+
+  const optA = CONFIG.colorOptions[padIndex[0]];
+  const optB = CONFIG.colorOptions[padIndex[1]];
+
+  if(optA.name === CONFIG.correctColorName && optB.name === CONFIG.correctColorName){
+    solve();
+  }
+}
+
+function solve(){
+  solved = true;
+  const display = document.getElementById('display');
+
+  display.innerHTML = `
+    <div class="headline">${CONFIG.successHeadline}</div>
+    <div class="subtext">${CONFIG.successSubtext}</div>
+    <div class="passcode">PASSCODE: ${CONFIG.passcode}</div>
+    <div class="footer">${CONFIG.successFooter}</div>
+  `;
+
+  if(CONFIG.postMessageOnSolve){
+    window.parent.postMessage({ event: 'room-solved', room: 'room-2', passcode: CONFIG.passcode }, '*');
+  }
+}
+
+buildGame();
+
+window.addEventListener('pageshow', (e) => { if(e.persisted) buildGame(); });
+
+/* ============================================================
+   EDIT MODE
+   ============================================================ */
+if(isEditMode){
+  editorEl.classList.add('show');
+  renderEditor();
+}
+
+function escapeAttr(str){
+  return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+function renderEditor(){
+  editorEl.innerHTML = `
+    <h2>Edit Room 2</h2>
+    <p class="note">Each row is one color from the reference chart. Edit the organism name shown on each pad, the color itself, and mark which row is the correct match. Click "Apply" to preview, then "Download updated game" to save a new file to re-upload.</p>
+    <div id="rowsList"></div>
+    <div class="field">
+      <label>Passcode</label>
+      <input type="text" id="passcodeInput" value="${escapeAttr(CONFIG.passcode)}">
+    </div>
+    <div class="editor-actions">
+      <button class="btn-apply" id="applyBtn">Apply &amp; Preview</button>
+      <button class="btn-download" id="downloadBtn">Download updated game</button>
+    </div>
+  `;
+  const rowsList = document.getElementById('rowsList');
+  CONFIG.colorOptions.forEach((opt, i) => {
+    const row = document.createElement('div');
+    row.className = 'row-edit';
+    row.innerHTML = `
+      <div class="grid">
+        <input type="color" data-field="hex" data-i="${i}" value="${opt.outline ? '#ffffff' : opt.hex}">
+        <div>
+          <label>Left pad organism</label>
+          <input type="text" data-field="padAOrg" data-i="${i}" value="${escapeAttr(opt.padAOrg)}">
+        </div>
+        <div>
+          <label>Right pad organism</label>
+          <input type="text" data-field="padBOrg" data-i="${i}" value="${escapeAttr(opt.padBOrg)}">
+        </div>
+        <label class="correct-flag">
+          <input type="radio" name="correctRow" value="${i}" ${opt.name === CONFIG.correctColorName ? 'checked' : ''}>
+          Correct
+        </label>
+      </div>
+    `;
+    rowsList.appendChild(row);
+  });
+
+  document.getElementById('applyBtn').addEventListener('click', applyEdits);
+  document.getElementById('downloadBtn').addEventListener('click', () => { applyEdits(); downloadUpdatedGame(); });
+}
+
+function applyEdits(){
+  const rowsList = document.getElementById('rowsList');
+  let correctIdx = 0;
+  rowsList.querySelectorAll('.row-edit').forEach((row, i) => {
+    CONFIG.colorOptions[i].hex = row.querySelector('[data-field="hex"]').value;
+    CONFIG.colorOptions[i].padAOrg = row.querySelector('[data-field="padAOrg"]').value;
+    CONFIG.colorOptions[i].padBOrg = row.querySelector('[data-field="padBOrg"]').value;
+    const radio = row.querySelector('input[type="radio"]');
+    if(radio.checked) correctIdx = i;
+  });
+  CONFIG.correctColorName = CONFIG.colorOptions[correctIdx].name;
+  CONFIG.passcode = document.getElementById('passcodeInput').value;
+  buildGame();
+  renderEditor();
+}
+
+function downloadUpdatedGame(){
+  const updatedJson = JSON.stringify(CONFIG, null, 2);
+  const updatedHtml = PRISTINE_HTML.replace(
+    /(<script type="application\/json" id="config-data">)([\s\S]*?)(<\/script>)/,
+    (m, open, _old, close) => open + '\n' + updatedJson + '\n' + close
+  );
+  const blob = new Blob([updatedHtml], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'room-2-light-box.html';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Room 2</title>
+<style>
+  :root{
+    --navy:#1f5c3e;
+    --border:#4c8868;
+    --white:#ffffff;
+    --gold:#d8a24a;
+    --cream:#f4f1ea;
+    --font: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:var(--font);
+    background:var(--navy);
+    min-height:100%;
+    display:flex; align-items:center; justify-content:center;
+    padding:18px;
+  }
+  .wrap{ width:100%; max-width:360px; display:flex; flex-direction:column; gap:14px; }
+
+  .card{
+    background:var(--navy);
+    border:1px solid var(--border);
+    border-radius:2px;
+    padding:22px 16px 26px;
+    display:flex; flex-direction:column; gap:20px;
+    box-shadow:0 10px 30px rgba(20,26,70,0.25);
+  }
+
+  .eyebrow{
+    color:rgba(255,255,255,0.6);
+    font-size:clamp(10px, 2.3vw, 13px); font-weight:700; letter-spacing:.14em;
+    text-transform:uppercase; text-align:center;
+  }
+
+  .box-surface{
+    background:var(--cream);
+    border-radius:8px;
+    padding:22px 14px;
+    display:flex; gap:14px; justify-content:center;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.12);
+  }
+
+  .pad{
+    flex:1; max-width:135px;
+    aspect-ratio: 1 / 1;
+    background:#fbfaf6;
+    border-radius:14px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    position:relative;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.10), inset 0 0 0 1px rgba(0,0,0,0.04);
+    user-select:none;
+    transition: box-shadow .3s ease;
+  }
+  .pad-glow{
+    position:absolute; inset:6%;
+    border-radius:12px;
+    opacity:0;
+    transition: opacity .35s ease, background .35s ease;
+    pointer-events:none;
+  }
+  .pad.active .pad-glow{ opacity:1; }
+
+  .pad-circle{
+    position:relative;
+    width:74%; height:74%;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    text-align:center;
+    border:2px solid var(--navy);
+    background:transparent;
+    transition: background .35s ease, border-color .35s ease, box-shadow .35s ease;
+  }
+  .pad-circle .idle-text{
+    color:var(--navy);
+    font-size:clamp(10px, 2.4vw, 13px); font-weight:700; letter-spacing:.05em;
+    text-transform:uppercase; line-height:1.3;
+  }
+  .pad-circle .org-text{
+    display:none;
+    color:#fff;
+    font-size:clamp(9px, 2.1vw, 12px); font-weight:700; line-height:1.15;
+    padding:0 8px;
+    overflow-wrap:break-word;
+    hyphens:auto;
+  }
+  .pad-circle .org-text.long{
+    font-size:clamp(8px, 1.8vw, 10.5px);
+  }
+  .pad.set .pad-circle .idle-text{ display:none; }
+  .pad.set .pad-circle .org-text{ display:block; }
+  .pad.set .pad-circle{ border-color:transparent; }
+  .pad.outline-state .pad-circle{ border:2px solid #b8b8b8; }
+  .pad.outline-state .pad-circle .org-text{ color:#8a8a8a; }
+
+  .pad-hint{
+    text-align:center; color:rgba(255,255,255,0.55);
+    font-size:clamp(10px, 2.3vw, 13px); letter-spacing:.05em; text-transform:uppercase;
+  }
+  .pads-hints{ display:flex; gap:14px; justify-content:center; }
+  .pads-hints > div{ flex:1; max-width:135px; }
+
+  .display{
+    background:#123326;
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:16px 14px;
+    text-align:center;
+    display:flex; flex-direction:column; gap:8px;
+    min-height:70px;
+    align-items:center; justify-content:center;
+  }
+
+  .puzzle-group{
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:18px 14px;
+    display:flex; flex-direction:column; gap:16px;
+  }
+  .display .waiting{
+    color:rgba(255,255,255,0.4);
+    font-size:clamp(11px, 2.6vw, 15px); letter-spacing:.1em; text-transform:uppercase; font-weight:700;
+  }
+  .display .headline{
+    color:#78e0a3; font-size:clamp(14px, 3.2vw, 19px); font-weight:700; letter-spacing:.04em;
+  }
+  .display .subtext{ color:rgba(255,255,255,0.85); font-size:clamp(12px, 2.8vw, 16px); }
+  .display .passcode{
+    color:var(--gold); font-size:clamp(22px, 5vw, 30px); font-weight:700; letter-spacing:.12em;
+    margin-top:2px;
+  }
+  .display .footer{ color:rgba(255,255,255,0.55); font-size:clamp(11px, 2.4vw, 14px); }
+
+  @media (prefers-reduced-motion: reduce){ *{ transition-duration:.001ms !important; } }
+
+  /* ============================================================
+     EDIT MODE — only appears with ?edit=1 in the URL
+     ============================================================ */
+  .editor{
+    background:#fff; border:1px solid #d7dae8; border-radius:6px;
+    padding:16px; display:none; flex-direction:column; gap:14px; font-family:var(--font);
+  }
+  .editor.show{ display:flex; }
+  .editor h2{ margin:0; font-size:14px; color:#1b2b2e; }
+  .editor .note{ font-size:11.5px; color:#666; line-height:1.5; margin:0; }
+  .row-edit{ border:1px solid #e2e5f0; border-radius:5px; padding:10px; display:flex; flex-direction:column; gap:6px; }
+  .row-edit .grid{ display:flex; gap:8px; align-items:center; }
+  .row-edit .grid > div{ flex:1; }
+  .row-edit label{ font-size:10px; font-weight:700; color:#555; text-transform:uppercase; display:block; margin-bottom:2px; }
+  .row-edit input[type=text]{ width:100%; padding:6px 7px; font-size:12.5px; border:1px solid #cfd3e4; border-radius:4px; font-family:var(--font); }
+  .row-edit input[type=color]{ width:44px; height:30px; padding:0; border:1px solid #cfd3e4; border-radius:4px; }
+  .row-edit .correct-flag{ display:flex; align-items:center; gap:5px; font-size:11px; color:#444; white-space:nowrap; }
+  .field{ display:flex; flex-direction:column; gap:4px; }
+  .field label{ font-size:10.5px; font-weight:700; color:#444; text-transform:uppercase; }
+  .field input[type=text], .field input[type=url]{ padding:7px 8px; font-size:13px; border:1px solid #cfd3e4; border-radius:4px; font-family:var(--font); }
+  .editor-actions{ display:flex; gap:8px; }
+  .editor-actions button{ flex:1; padding:10px; border-radius:5px; border:none; font-weight:700; font-size:12.5px; cursor:pointer; }
+  .btn-apply{ background:var(--navy); color:#fff; }
+  .btn-download{ background:var(--gold); color:#2b2200; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card" id="card"></div>
+  <div class="editor" id="editor"></div>
+</div>
+
+<script type="application/json" id="config-data">
+{
+  "eyebrow": "Light Box — Sample Analysis",
+  "colorOptions": [
+    { "name": "Blue",       "hex": "#2E3B8C", "padAOrg": "Lactobacillus Plantarum",  "padBOrg": "Giardia" },
+    { "name": "Green",      "hex": "#5CB85C", "padAOrg": "Bacillus Cereus",          "padBOrg": "Basidios" },
+    { "name": "Magenta",    "hex": "#C0448E", "padAOrg": "Lactobacillus Acidophilus","padBOrg": "Alginate" },
+    { "name": "Light Pink", "hex": "#F4C6DC", "padAOrg": "Amoeba",                   "padBOrg": "Rhizopus Stolonifer" },
+    { "name": "Orange",     "hex": "#E8792E", "padAOrg": "Poxviridae",               "padBOrg": "Candida" },
+    { "name": "Red",        "hex": "#E8402E", "padAOrg": "Caliciviridae",            "padBOrg": "Enterobacteriaceae" },
+    { "name": "Yellow",     "hex": "#E8D62E", "padAOrg": "Lice",                     "padBOrg": "Staphylococcus Aureus" },
+    { "name": "Blank",      "hex": "#FFFFFF", "outline": true, "padAOrg": "Baculoviruses", "padBOrg": "Aspergillaceae" }
+  ],
+  "correctColorName": "Orange",
+  "passcode": "2024",
+  "successHeadline": "\u2705 ANALYSIS COMPLETE",
+  "successSubtext": "Microorganism Match Confirmed",
+  "successFooter": "Proceed to the next stage of the investigation.",
+  "postMessageOnSolve": true
+}
+</script>
+
+<script>
+const PRISTINE_HTML = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+let CONFIG = JSON.parse(document.getElementById('config-data').textContent);
+
+const params = new URLSearchParams(location.search);
+const isEditMode = params.get('edit') === '1';
+
+const card = document.getElementById('card');
+const editorEl = document.getElementById('editor');
+
+let padIndex = [null, null]; // current color-option index for pad A (0) and pad B (1)
+let solved = false;
+
+function buildGame(){
+  card.innerHTML = '';
+  padIndex = [null, null];
+  solved = false;
+
+  const display = document.createElement('div');
+  display.className = 'display';
+  display.id = 'display';
+  display.innerHTML = `<div class="waiting">Awaiting samples</div>`;
+  card.appendChild(display);
+
+  const puzzleGroup = document.createElement('div');
+  puzzleGroup.className = 'puzzle-group';
+
+  const eyebrow = document.createElement('div');
+  eyebrow.className = 'eyebrow';
+  eyebrow.textContent = CONFIG.eyebrow;
+  puzzleGroup.appendChild(eyebrow);
+
+  const surface = document.createElement('div');
+  surface.className = 'box-surface';
+  surface.innerHTML = `
+    <div class="pad" data-pad="0">
+      <div class="pad-glow"></div>
+      <div class="pad-circle">
+        <div class="idle-text">Place<br>Sample<br>Here</div>
+        <div class="org-text"></div>
+      </div>
+    </div>
+    <div class="pad" data-pad="1">
+      <div class="pad-glow"></div>
+      <div class="pad-circle">
+        <div class="idle-text">Place<br>Sample<br>Here</div>
+        <div class="org-text"></div>
+      </div>
+    </div>
+  `;
+  puzzleGroup.appendChild(surface);
+
+  const hints = document.createElement('div');
+  hints.className = 'pads-hints';
+  hints.innerHTML = `<div class="pad-hint">Tap to cycle</div><div class="pad-hint">Tap to cycle</div>`;
+  puzzleGroup.appendChild(hints);
+
+  card.appendChild(puzzleGroup);
+
+  [0,1].forEach(padNum => {
+    const padEl = surface.querySelector(`[data-pad="${padNum}"]`);
+    padEl.addEventListener('click', () => {
+      const cur = padIndex[padNum];
+      const next = cur === null ? 0 : (cur + 1) % CONFIG.colorOptions.length;
+      setPad(padNum, next, padEl);
+    });
+  });
+}
+
+function setPad(padNum, optionIndex, padEl){
+  padIndex[padNum] = optionIndex;
+  const opt = CONFIG.colorOptions[optionIndex];
+  const glow = padEl.querySelector('.pad-glow');
+  const circle = padEl.querySelector('.pad-circle');
+  const orgText = padEl.querySelector('.org-text');
+
+  padEl.classList.add('active', 'set');
+  padEl.classList.toggle('outline-state', !!opt.outline);
+
+  if(opt.outline){
+    glow.style.background = 'transparent';
+    circle.style.background = 'transparent';
+    orgText.style.color = '#8a8a8a';
+  } else {
+    glow.style.background = `radial-gradient(circle, ${opt.hex}55 0%, transparent 70%)`;
+    circle.style.background = opt.hex;
+    orgText.style.color = '#fff';
+  }
+  orgText.textContent = padNum === 0 ? opt.padAOrg : opt.padBOrg;
+  orgText.classList.toggle('long', orgText.textContent.length > 14);
+
+  evaluate();
+}
+
+function evaluate(){
+  if(solved) return;
+  if(padIndex[0] === null || padIndex[1] === null) return;
+
+  const optA = CONFIG.colorOptions[padIndex[0]];
+  const optB = CONFIG.colorOptions[padIndex[1]];
+
+  if(optA.name === CONFIG.correctColorName && optB.name === CONFIG.correctColorName){
+    solve();
+  }
+}
+
+function solve(){
+  solved = true;
+  const display = document.getElementById('display');
+
+  display.innerHTML = `
+    <div class="headline">${CONFIG.successHeadline}</div>
+    <div class="subtext">${CONFIG.successSubtext}</div>
+    <div class="passcode">PASSCODE: ${CONFIG.passcode}</div>
+    <div class="footer">${CONFIG.successFooter}</div>
+  `;
+
+  if(CONFIG.postMessageOnSolve){
+    window.parent.postMessage({ event: 'room-solved', room: 'room-2', passcode: CONFIG.passcode }, '*');
+  }
+}
+
+buildGame();
+
+window.addEventListener('pageshow', (e) => { if(e.persisted) buildGame(); });
+
+/* ============================================================
+   EDIT MODE
+   ============================================================ */
+if(isEditMode){
+  editorEl.classList.add('show');
+  renderEditor();
+}
+
+function escapeAttr(str){
+  return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+function renderEditor(){
+  editorEl.innerHTML = `
+    <h2>Edit Room 2</h2>
+    <p class="note">Each row is one color from the reference chart. Edit the organism name shown on each pad, the color itself, and mark which row is the correct match. Click "Apply" to preview, then "Download updated game" to save a new file to re-upload.</p>
+    <div id="rowsList"></div>
+    <div class="field">
+      <label>Passcode</label>
+      <input type="text" id="passcodeInput" value="${escapeAttr(CONFIG.passcode)}">
+    </div>
+    <div class="editor-actions">
+      <button class="btn-apply" id="applyBtn">Apply &amp; Preview</button>
+      <button class="btn-download" id="downloadBtn">Download updated game</button>
+    </div>
+  `;
+  const rowsList = document.getElementById('rowsList');
+  CONFIG.colorOptions.forEach((opt, i) => {
+    const row = document.createElement('div');
+    row.className = 'row-edit';
+    row.innerHTML = `
+      <div class="grid">
+        <input type="color" data-field="hex" data-i="${i}" value="${opt.outline ? '#ffffff' : opt.hex}">
+        <div>
+          <label>Left pad organism</label>
+          <input type="text" data-field="padAOrg" data-i="${i}" value="${escapeAttr(opt.padAOrg)}">
+        </div>
+        <div>
+          <label>Right pad organism</label>
+          <input type="text" data-field="padBOrg" data-i="${i}" value="${escapeAttr(opt.padBOrg)}">
+        </div>
+        <label class="correct-flag">
+          <input type="radio" name="correctRow" value="${i}" ${opt.name === CONFIG.correctColorName ? 'checked' : ''}>
+          Correct
+        </label>
+      </div>
+    `;
+    rowsList.appendChild(row);
+  });
+
+  document.getElementById('applyBtn').addEventListener('click', applyEdits);
+  document.getElementById('downloadBtn').addEventListener('click', () => { applyEdits(); downloadUpdatedGame(); });
+}
+
+function applyEdits(){
+  const rowsList = document.getElementById('rowsList');
+  let correctIdx = 0;
+  rowsList.querySelectorAll('.row-edit').forEach((row, i) => {
+    CONFIG.colorOptions[i].hex = row.querySelector('[data-field="hex"]').value;
+    CONFIG.colorOptions[i].padAOrg = row.querySelector('[data-field="padAOrg"]').value;
+    CONFIG.colorOptions[i].padBOrg = row.querySelector('[data-field="padBOrg"]').value;
+    const radio = row.querySelector('input[type="radio"]');
+    if(radio.checked) correctIdx = i;
+  });
+  CONFIG.correctColorName = CONFIG.colorOptions[correctIdx].name;
+  CONFIG.passcode = document.getElementById('passcodeInput').value;
+  buildGame();
+  renderEditor();
+}
+
+function downloadUpdatedGame(){
+  const updatedJson = JSON.stringify(CONFIG, null, 2);
+  const updatedHtml = PRISTINE_HTML.replace(
+    /(<script type="application\/json" id="config-data">)([\s\S]*?)(<\/script>)/,
+    (m, open, _old, close) => open + '\n' + updatedJson + '\n' + close
+  );
+  const blob = new Blob([updatedHtml], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'room-2-light-box.html';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
