@@ -6,8 +6,8 @@
 <title>Room 2</title>
 <style>
   :root{
-    --navy:#364396;
-    --border:#7679b4;
+    --navy:#1f5c3e;
+    --border:#4c8868;
     --white:#ffffff;
     --gold:#d8a24a;
     --cream:#f4f1ea;
@@ -103,7 +103,7 @@
   .pads-hints > div{ flex:1; max-width:135px; }
 
   .display{
-    background:#1b2258;
+    background:#123326;
     border-radius:6px;
     padding:16px 14px;
     text-align:center;
@@ -124,20 +124,6 @@
     margin-top:2px;
   }
   .display .footer{ color:rgba(255,255,255,0.55); font-size:10.5px; }
-
-  .next-icon{
-    width:52px; height:52px; border-radius:50%;
-    background:var(--white); border:none;
-    display:flex; align-items:center; justify-content:center;
-    cursor:pointer; margin:6px auto 0;
-    opacity:0; transform:scale(.85); pointer-events:none;
-    transition:opacity .4s ease, transform .4s ease, filter .2s ease;
-    box-shadow:0 6px 18px rgba(0,0,0,0.25);
-  }
-  .next-icon.show{ opacity:1; transform:scale(1); pointer-events:auto; }
-  .next-icon:hover{ filter:brightness(0.95); }
-  .next-icon svg{ width:20px; height:15px; }
-  .next-icon polygon{ fill:var(--navy); }
 
   @media (prefers-reduced-motion: reduce){ *{ transition-duration:.001ms !important; } }
 
@@ -191,7 +177,6 @@
   "successHeadline": "\u2705 ANALYSIS COMPLETE",
   "successSubtext": "Microorganism Match Confirmed",
   "successFooter": "Proceed to the next stage of the investigation.",
-  "nextRoomUrl": "",
   "postMessageOnSolve": true
 }
 </script>
@@ -202,19 +187,12 @@ let CONFIG = JSON.parse(document.getElementById('config-data').textContent);
 
 const params = new URLSearchParams(location.search);
 const isEditMode = params.get('edit') === '1';
-const nextUrlOverride = params.get('next');
 
 const card = document.getElementById('card');
 const editorEl = document.getElementById('editor');
 
 let padIndex = [null, null]; // current color-option index for pad A (0) and pad B (1)
 let solved = false;
-
-function arrowIconSVG(){
-  return `<svg viewBox="0 0 22 16" xmlns="http://www.w3.org/2000/svg">
-    <polygon points="0,1 10,1 22,8 10,15 0,15 8,8"></polygon>
-  </svg>`;
-}
 
 function buildGame(){
   card.innerHTML = '';
@@ -256,13 +234,6 @@ function buildGame(){
   display.id = 'display';
   display.innerHTML = `<div class="waiting">Awaiting samples</div>`;
   card.appendChild(display);
-
-  const nextIcon = document.createElement('button');
-  nextIcon.className = 'next-icon';
-  nextIcon.id = 'nextIcon';
-  nextIcon.setAttribute('aria-label', 'Go to next room');
-  nextIcon.innerHTML = arrowIconSVG();
-  card.appendChild(nextIcon);
 
   [0,1].forEach(padNum => {
     const padEl = surface.querySelector(`[data-pad="${padNum}"]`);
@@ -313,8 +284,6 @@ function evaluate(){
 function solve(){
   solved = true;
   const display = document.getElementById('display');
-  const nextIcon = document.getElementById('nextIcon');
-  const nextUrl = nextUrlOverride || CONFIG.nextRoomUrl;
 
   display.innerHTML = `
     <div class="headline">${CONFIG.successHeadline}</div>
@@ -322,14 +291,7 @@ function solve(){
     <div class="passcode">PASSCODE: ${CONFIG.passcode}</div>
     <div class="footer">${CONFIG.successFooter}</div>
   `;
-  nextIcon.classList.add('show');
 
-  if(nextUrl){
-    nextIcon.addEventListener('click', () => {
-      try { window.top.location.href = nextUrl; }
-      catch(err){ location.href = nextUrl; }
-    });
-  }
   if(CONFIG.postMessageOnSolve){
     window.parent.postMessage({ event: 'room-solved', room: 'room-2', passcode: CONFIG.passcode }, '*');
   }
@@ -359,10 +321,6 @@ function renderEditor(){
     <div class="field">
       <label>Passcode</label>
       <input type="text" id="passcodeInput" value="${escapeAttr(CONFIG.passcode)}">
-    </div>
-    <div class="field">
-      <label>Next room link (for the arrow icon)</label>
-      <input type="url" id="nextUrlInput" placeholder="https://..." value="${escapeAttr(CONFIG.nextRoomUrl || '')}">
     </div>
     <div class="editor-actions">
       <button class="btn-apply" id="applyBtn">Apply &amp; Preview</button>
@@ -409,7 +367,6 @@ function applyEdits(){
   });
   CONFIG.correctColorName = CONFIG.colorOptions[correctIdx].name;
   CONFIG.passcode = document.getElementById('passcodeInput').value;
-  CONFIG.nextRoomUrl = document.getElementById('nextUrlInput').value.trim();
   buildGame();
   renderEditor();
 }
