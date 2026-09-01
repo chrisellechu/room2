@@ -17,7 +17,7 @@
   html,body{margin:0;padding:0;height:100%;}
   body{
     font-family:var(--font);
-    background:#eef0f8;
+    background:var(--navy);
     min-height:100%;
     display:flex; align-items:center; justify-content:center;
     padding:18px;
@@ -35,7 +35,7 @@
 
   .eyebrow{
     color:rgba(255,255,255,0.6);
-    font-size:10.5px; font-weight:700; letter-spacing:.14em;
+    font-size:clamp(10px, 2.3vw, 13px); font-weight:700; letter-spacing:.14em;
     text-transform:uppercase; text-align:center;
   }
 
@@ -70,7 +70,7 @@
 
   .pad-circle{
     position:relative;
-    width:62%; height:62%;
+    width:74%; height:74%;
     border-radius:50%;
     display:flex; align-items:center; justify-content:center;
     text-align:center;
@@ -80,14 +80,19 @@
   }
   .pad-circle .idle-text{
     color:var(--navy);
-    font-size:9.5px; font-weight:700; letter-spacing:.06em;
-    text-transform:uppercase; line-height:1.35;
+    font-size:clamp(10px, 2.4vw, 13px); font-weight:700; letter-spacing:.05em;
+    text-transform:uppercase; line-height:1.3;
   }
   .pad-circle .org-text{
     display:none;
     color:#fff;
-    font-size:10px; font-weight:700; line-height:1.25;
-    padding:0 6px;
+    font-size:clamp(9px, 2.1vw, 12px); font-weight:700; line-height:1.15;
+    padding:0 8px;
+    overflow-wrap:break-word;
+    hyphens:auto;
+  }
+  .pad-circle .org-text.long{
+    font-size:clamp(8px, 1.8vw, 10.5px);
   }
   .pad.set .pad-circle .idle-text{ display:none; }
   .pad.set .pad-circle .org-text{ display:block; }
@@ -97,7 +102,7 @@
 
   .pad-hint{
     text-align:center; color:rgba(255,255,255,0.55);
-    font-size:10px; letter-spacing:.05em; text-transform:uppercase;
+    font-size:clamp(10px, 2.3vw, 13px); letter-spacing:.05em; text-transform:uppercase;
   }
   .pads-hints{ display:flex; gap:14px; justify-content:center; }
   .pads-hints > div{ flex:1; max-width:135px; }
@@ -113,17 +118,17 @@
   }
   .display .waiting{
     color:rgba(255,255,255,0.4);
-    font-size:11px; letter-spacing:.1em; text-transform:uppercase; font-weight:700;
+    font-size:clamp(11px, 2.6vw, 15px); letter-spacing:.1em; text-transform:uppercase; font-weight:700;
   }
   .display .headline{
-    color:#78e0a3; font-size:13px; font-weight:700; letter-spacing:.04em;
+    color:#78e0a3; font-size:clamp(14px, 3.2vw, 19px); font-weight:700; letter-spacing:.04em;
   }
-  .display .subtext{ color:rgba(255,255,255,0.85); font-size:11.5px; }
+  .display .subtext{ color:rgba(255,255,255,0.85); font-size:clamp(12px, 2.8vw, 16px); }
   .display .passcode{
-    color:var(--gold); font-size:20px; font-weight:700; letter-spacing:.12em;
+    color:var(--gold); font-size:clamp(22px, 5vw, 30px); font-weight:700; letter-spacing:.12em;
     margin-top:2px;
   }
-  .display .footer{ color:rgba(255,255,255,0.55); font-size:10.5px; }
+  .display .footer{ color:rgba(255,255,255,0.55); font-size:clamp(11px, 2.4vw, 14px); }
 
   @media (prefers-reduced-motion: reduce){ *{ transition-duration:.001ms !important; } }
 
@@ -265,6 +270,7 @@ function setPad(padNum, optionIndex, padEl){
     orgText.style.color = '#fff';
   }
   orgText.textContent = padNum === 0 ? opt.padAOrg : opt.padBOrg;
+  orgText.classList.toggle('long', orgText.textContent.length > 14);
 
   evaluate();
 }
