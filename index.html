@@ -109,12 +109,20 @@
 
   .display{
     background:#123326;
+    border:1px solid var(--border);
     border-radius:6px;
     padding:16px 14px;
     text-align:center;
     display:flex; flex-direction:column; gap:8px;
     min-height:70px;
     align-items:center; justify-content:center;
+  }
+
+  .puzzle-group{
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:18px 14px;
+    display:flex; flex-direction:column; gap:16px;
   }
   .display .waiting{
     color:rgba(255,255,255,0.4);
@@ -204,10 +212,19 @@ function buildGame(){
   padIndex = [null, null];
   solved = false;
 
+  const display = document.createElement('div');
+  display.className = 'display';
+  display.id = 'display';
+  display.innerHTML = `<div class="waiting">Awaiting samples</div>`;
+  card.appendChild(display);
+
+  const puzzleGroup = document.createElement('div');
+  puzzleGroup.className = 'puzzle-group';
+
   const eyebrow = document.createElement('div');
   eyebrow.className = 'eyebrow';
   eyebrow.textContent = CONFIG.eyebrow;
-  card.appendChild(eyebrow);
+  puzzleGroup.appendChild(eyebrow);
 
   const surface = document.createElement('div');
   surface.className = 'box-surface';
@@ -227,18 +244,14 @@ function buildGame(){
       </div>
     </div>
   `;
-  card.appendChild(surface);
+  puzzleGroup.appendChild(surface);
 
   const hints = document.createElement('div');
   hints.className = 'pads-hints';
   hints.innerHTML = `<div class="pad-hint">Tap to cycle</div><div class="pad-hint">Tap to cycle</div>`;
-  card.appendChild(hints);
+  puzzleGroup.appendChild(hints);
 
-  const display = document.createElement('div');
-  display.className = 'display';
-  display.id = 'display';
-  display.innerHTML = `<div class="waiting">Awaiting samples</div>`;
-  card.appendChild(display);
+  card.appendChild(puzzleGroup);
 
   [0,1].forEach(padNum => {
     const padEl = surface.querySelector(`[data-pad="${padNum}"]`);
